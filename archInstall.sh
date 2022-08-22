@@ -8,17 +8,16 @@
 #Variables
 
 DISKNAME="/dev/nvme0n1" # Name of the disk to partition
-EFIPART=$DISKNAME"p1" # Partition name for EFI partition
+EFIPART=$DISKNAME"p1" # Partition name for EFI partition, simply 1 for /dev/sda (normal HDD), for nvme p1 is the correct syntax
 BOOTPART=$DISKNAME"p2" # Partition name for boot partition
 LVMPART=$DISKNAME"p3" # Partition name for lvm partition
 GROUPNAME="blackBox" # Name of lvm virtual volume
 ROOTSIZE="50G" # Size (in GB) of root lvm partition
 MEMSIZE=$(free -m | grep "Mem:" | awk '{print $2}')
-ENCRYPTPASSWORD="testPass"
 REGION="Europe"
 CITY="London"
 HOSTNAME="theStratosphere"
-BOOTLOADER="blackBox"
+BOOTLOADER="blackBox" # Name that the bootloader will show in bios
 
 preInstall() {
 	clear
@@ -43,11 +42,14 @@ diskPartition(){
 g
 n
 
-+1G
-n
 
 +1G
 n
+
+
++1G
+n
+
 
 
 t
@@ -71,31 +73,29 @@ EOF
 }
 
 rootEncrypt(){
-	cryptsetup luksFormat /dev/${GROUPNAME}/${GROUPNAME}Root << EOF
-	${ENCRYPTPASSWORD}
-EOF
-	cryptsetup open /dev/${GROUPNAME}/${GROUPNAME}Root << EOF
-	${ENCRYPTPASSWORD}
-EOF
+	cryptsetup luksFormat /dev/${GROUPNAME}/${GROUPNAME}Root
+	cryptsetup open /dev/${GROUPNAME}/${GROUPNAME}Root root
 	mkfs.ext4 /dev/mapper/root
+	mount /dev/mapper/root /mnt
 }
 
 mountParts(){
+	# Create, format and mount boot partition
 	mkdir /mnt/boot
 	dd if=/dev/zero of=$BOOTPART bs=1M
 	mkfs.ext4 $BOOTPART
+	mount $BOOTPART /mnt/boot
+
+	#Create, format and mount efi partition (UEFI only)
 	mkdir /mnt/efi
 	dd if=/dev/zero of=$LVMPART bs=1M
-	mkfs.fat -F 32 $LVMPART
-	mount /dev/mapper/root /mnt
-	mount $BOOTPART /mnt/boot
-	mount $LVMPART /mnt/efi
+	mkfs.fat -F 32 $EFIPART
+	mount $EFIPART /mnt/efi
 }
 
 archInstall(){
 	pacstrap /mnt base linux linux-firmware base-devel vim lvm2 man-db man-pages amd-ucode grub efibootmgr iwd
-	gefstab -U /mnt >> /mnt/etc/fstab
-	arch-chroot /mnt
+	genfstab -U /mnt >> /mnt/etc/fstab
 }
 
 mntSetup(){
@@ -194,6 +194,7 @@ grubInstall(){
 	echo "You need this for grubs kernal parameter"
 	echo "The syntax will be:"
 	echo "cryptdevice=UUID=copiedUUID:root root=/dev/mapper/root"
+	read -rsn1;echo
 	vim /etc/default/grub
 	grub-mkconfig -o /boot/grub/grub.cfg
 }
@@ -230,12 +231,8 @@ diskPartition
 rootEncrypt
 mountParts
 archInstall
-mntSetup
-grubInstall
-finishingUp
-homeDrive
+# mntSetup
+# grubInstall
+# finishingUp
+# homeDrive
 
-echo "Done!"
-echo "Prepare to reboot, hit any key"
-read -rsn1;echo
-reboot
