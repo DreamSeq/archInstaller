@@ -182,7 +182,9 @@ HOOKS=(base udev autodetect keyboard keymap consolefont modconf block lvm2 encry
 #COMPRESSION_OPTIONS=()
 EOF
 	mkinitcpio -P
-	echo "Time to set ROOT password"
+	clear
+	echo "Time to set ROOT password:"
+	echo " "
 	passwd root
 }
 
@@ -216,7 +218,9 @@ EOF
 homeDrive(){
 	mkdir -m 700 /etc/luksKeys
 	dd if=/dev/random of=/etc/luksKeys/home bs=1 count=256
-	cryptsetup luksFormat -v /dev/$GROUPNAME/${GROUPNAME}Home /etc/luksKeys/home
+	cryptsetup luksFormat -v /dev/$GROUPNAME/${GROUPNAME}Home /etc/luksKeys/home << EOF
+YES
+EOF
 	cryptsetup -d /etc/luksKeys/home open /dev/$GROUPNAME/${GROUPNAME}Home home
 	mkfs.ext4 /dev/mapper/home
 	mount /dev/mapper/home /home
@@ -226,6 +230,8 @@ EOF
 	cat >> /etc/fstab << EOF
 /dev/mapper/home /home ext4 defaults 0 2
 EOF
+clear
+echo "Installation finished! Type reboot to restart!"
 }
 
 if [ "$1" == "chrooted" ]
@@ -241,4 +247,5 @@ else
 	mountParts
 	archInstall
 fi
+
 
