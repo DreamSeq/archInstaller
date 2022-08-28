@@ -88,7 +88,7 @@ mountParts(){
 
 	#Create, format and mount efi partition (UEFI only)
 	mkdir /mnt/efi
-	dd if=/dev/zero of=$LVMPART bs=1M
+	dd if=/dev/zero of=$EFIPART bs=1M
 	mkfs.fat -F 32 $EFIPART
 	mount $EFIPART /mnt/efi
 }
