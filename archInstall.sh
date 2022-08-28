@@ -96,6 +96,8 @@ mountParts(){
 archInstall(){
 	pacstrap /mnt base linux linux-firmware base-devel vim lvm2 man-db man-pages amd-ucode grub efibootmgr iwd
 	genfstab -U /mnt >> /mnt/etc/fstab
+	cp archInstall.sh /mnt/root
+	arch-chroot /mnt ./root/archInstall.sh chrooted
 }
 
 mntSetup(){
@@ -226,13 +228,17 @@ EOF
 EOF
 }
 
-preInstall
-diskPartition
-rootEncrypt
-mountParts
-archInstall
-# mntSetup
-# grubInstall
-# finishingUp
-# homeDrive
+if [ "$1" == "chrooted" ]
+then
+	mntSetup
+	grubInstall
+	finishingUp
+	homeDrive
+else 
+	preInstall
+	diskPartition
+	rootEncrypt
+	mountParts
+	archInstall
+fi
 
