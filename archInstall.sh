@@ -88,7 +88,6 @@ mountParts(){
 
 	#Create, format and mount efi partition (UEFI only)
 	mkdir /mnt/efi
-	dd if=/dev/zero of=$EFIPART bs=1M
 	mkfs.fat -F 32 $EFIPART
 	mount $EFIPART /mnt/efi
 }
@@ -205,12 +204,11 @@ grubInstall(){
 
 finishingUp(){
 	cat >> /etc/crypttab << EOF
-swap	/dev/$GROUPNAME/${GROUPNAME}Swap /dev/urandom swap,cipher=aes-xts-plain64,size=256
-tmp	/dev/$GROUPNAME/${GROUPNAME}Tmp /dev/urandom tmp,cipher=aes-xts-plain64,size=256
+swap /dev/$GROUPNAME/${GROUPNAME}Swap /dev/urandom swap,cipher=aes-xts-plain64,size=256
+tmp /dev/$GROUPNAME/${GROUPNAME}Tmp /dev/urandom tmp,cipher=aes-xts-plain64,size=256
 EOF
 	cat >> /etc/fstab << EOF
 /dev/mapper/swap none swap sw 0 0
-
 /dev/mapper/tmp /tmp tmpfs defaults 0 0
 EOF
 }
